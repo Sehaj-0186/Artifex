@@ -1,0 +1,21 @@
+{
+    "name": "NFTNexus",
+    "description": "Your NFT Analytics Platform",
+    "iconPath": "logo.png",
+    "icons": [
+      {
+        "src": "FlashFiLogo.png",
+        "sizes": "256x256",
+        "type": "image/png"
+      }
+    ],
+    
+    "safe_apps_permissions": ["clipboard-write","wallet-web3-provider"],
+    "networks": [
+      "1", 
+      "137", 
+      "56", 
+      "43114", 
+      "59144" 
+    ]
+  }
