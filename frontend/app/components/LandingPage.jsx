@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import ConnectWalletButton from './ConnectWalletButton'
 import { MavenPro } from '../page'
-
+import TextareaAutosize from 'react-textarea-autosize'
 
 const LandingPage = () => {
   const [input, setInput] = useState('')
@@ -26,13 +26,11 @@ const LandingPage = () => {
         }} />
         
         {/* Connect Wallet Button */}
-        <div className='absolute top-10 right-10 z-10'>
-          <ConnectWalletButton/>
-        </div>
+     
 
         <div className='w-full h-full flex flex-col justify-center items-center px-4 relative z-10'>
-          {/*Loading Icon */}
-          <div className='star-parent relative w-[300px] h-[160px] rounded-tr-full rounded-tl-full rounded-bl-full bg-gradient-to-br from-indigo-600 via-pink-300 to-indigo-600 flex justify-center items-center'>
+          {/* Loading Icon */}
+          <div className='star-parent relative w-[300px] h-[160px] rounded-tr-full rounded-tl-full rounded-bl-full bg-gradient-to-br from-indigo-600 via-pink-300 to-indigo-600 flex justify-center items-center top-[5%]'>
             <div className='star absolute w-60 h-28 bg-zinc-950 rounded-full flex justify-center items-center gap-4'>
               <div className='w-6 h-6 rounded-full bg-gradient-to-br from-indigo-600 to-pink-300 from-[0%] to-[100%] animate-bounce [animation-delay:-0.3s]'></div>
               <div className='w-6 h-6 rounded-full bg-pink-300 animate-bounce [animation-delay:-0.15s]'></div>
@@ -45,23 +43,27 @@ const LandingPage = () => {
             <h1 className='text-5xl text-white mb-2 tracking-tight'>
               Artifex AI
             </h1>
-            <p className='text-xl text-gray-400'>Your Smart Contract Companion</p>
+            <p className='text-xl text-gray-400'>AI-Powered Blockchain Development</p>
           </div>
           
           <form onSubmit={handleSubmit} className="relative w-full max-w-[400px]">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="w-full px-4 py-3 rounded-full bg-zinc-800/50 text-white border border-zinc-700 focus:outline-none focus:border-indigo-600 pr-12"
-            />
-            <button
-              type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-br from-indigo-600 to-pink-300 from-[0%] to-[100%] rounded-full hover:scale-105 transition-all duration-400 ease-in-out"
-            >
-              <ArrowRight className="w-5 h-5 text-white" />
-            </button>
+            <div className="relative">
+              <TextareaAutosize
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask me Anything..."
+                minRows={1}
+                maxRows={7}
+                className="w-full px-4 py-3 rounded-2xl bg-zinc-800/50 text-white border border-zinc-700 focus:outline-none focus:border-indigo-600 pr-12 no-scrollbar  overflow-y-auto"
+                
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-br from-indigo-600 to-pink-300 from-[0%] to-[100%] rounded-full hover:scale-105 transition-all duration-400 ease-in-out"
+              >
+                <ArrowRight className="w-5 h-5 text-white" />
+              </button>
+            </div>
           </form>
         </div>
       </div>

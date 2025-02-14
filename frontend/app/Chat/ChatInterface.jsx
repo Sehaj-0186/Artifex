@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import ParticlesNetwork from '../components/ParticlesNetwork';
 import { MavenPro } from "../page";
+import TextareaAutosize from 'react-textarea-autosize'
 
 const RECONNECT_INTERVAL = 3000;
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -264,7 +265,7 @@ export default function ChatInterface() {
   {isLoading && (
     <div className="self-start">
       <div className='star-parent relative w-[70px] h-[40px] rounded-tr-full rounded-tl-full rounded-br-full bg-gradient-to-br from-indigo-600 via-pink-300 to-indigo-600 flex justify-center items-center'>
-        <div className='star absolute w-[65px] h-[35px] bg-zinc-950 rounded-full flex justify-center items-center gap-2'>
+        <div className='star absolute w-[65px] h-[35px] bg-zinc-900 rounded-full flex justify-center items-center gap-2'>
           <div className='w-1 h-1 rounded-full bg-gradient-to-br from-indigo-600 to-pink-300 from-[0%] to-[100%] animate-bounce [animation-delay:-0.3s]'></div>
           <div className='w-1 h-1 rounded-full bg-pink-300 animate-bounce [animation-delay:-0.15s]'></div>
           <div className='w-1 h-1 rounded-full bg-gradient-to-tl from-indigo-600 to-pink-300 from-[0%] to-[100%] animate-bounce'></div>
@@ -276,23 +277,25 @@ export default function ChatInterface() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="relative w-full max-w-[500px] mx-auto z-10">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isLoading}
-            className="w-full px-4 py-3 rounded-full bg-zinc-800/50 text-white border border-zinc-700 focus:outline-none focus:border-indigo-600 pr-12"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-br from-indigo-600 to-pink-300 from-[0%] to-[100%] rounded-full hover:scale-105 transition-all duration-400 ease-in-out disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <ArrowRight className="w-5 h-5 text-white" />
-          </button>
-        </form>
+        <form onSubmit={handleSubmit} className="relative w-full max-w-[600px] mx-auto">
+            <div className="relative">
+              <TextareaAutosize
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                minRows={1}
+                maxRows={7}
+                className="w-full px-4 py-3 rounded-2xl bg-zinc-800/50 text-white border border-zinc-700 focus:outline-none focus:border-indigo-600 pr-12 no-scrollbar  overflow-y-auto"
+                
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-br from-indigo-600 to-pink-300 from-[0%] to-[100%] rounded-full hover:scale-105 transition-all duration-400 ease-in-out"
+              >
+                <ArrowRight className="w-5 h-5 text-white" />
+              </button>
+            </div>
+          </form>
       </div>
     </div>
     </div>
