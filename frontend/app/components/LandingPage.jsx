@@ -13,7 +13,7 @@ const LandingPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!input.trim()) return
-    router.push(`/Chat?message=${encodeURIComponent(input.trim())}`)
+    router.push(`/Chat?message=${encodeURIComponent(input)}`)
   }
 
   return (
@@ -51,6 +51,14 @@ const LandingPage = () => {
               <TextareaAutosize
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (!e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }
+                }}
                 placeholder="Ask me Anything..."
                 minRows={1}
                 maxRows={7}

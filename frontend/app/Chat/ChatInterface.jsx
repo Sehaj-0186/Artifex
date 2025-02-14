@@ -171,6 +171,27 @@ export default function ChatInterface() {
     }
   }, [connectionStatus, initialMessage, messages.length]);
 
+  useEffect(() => {
+    if (connectionStatus === 'connected' && initialMessage && messages.length === 0) {
+      // Decode the URL-encoded message to preserve line breaks
+      const decodedMessage = decodeURIComponent(initialMessage)
+      setMessages([
+        {
+          id: Date.now().toString(),
+          text: decodedMessage,
+          type: 'user',
+          isComplete: true,
+        }
+      ])
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'message',
+          content: decodedMessage,
+        }))
+      }
+    }
+  }, [connectionStatus, initialMessage, messages.length])
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!input.trim() || !wsRef.current) return;
@@ -243,7 +264,7 @@ export default function ChatInterface() {
       key={message.id}
       className={`max-w-[80%] animate-[fadeIn_0.3s_ease-in] 
         ${message.type === 'user' 
-          ? 'self-end backdrop-blur-md bg-white/10 border border-white/20 text-white rounded-tl-xl rounded-bl-xl rounded-tr-xl px-4 py-2' 
+          ? 'self-end backdrop-blur-md bg-white/10 border border-white/20 text-white rounded-tl-xl rounded-bl-xl rounded-tr-xl px-4 py-2 whitespace-pre-wrap' 
           : 'self-start text-white rounded-tl-xl rounded-br-xl rounded-tr-xl relative p-[1px]'}`}
     >
       {/* Gradient border background for AI messages */}
@@ -282,11 +303,20 @@ export default function ChatInterface() {
               <TextareaAutosize
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (!e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }
+                }}
                 placeholder="Type your message..."
                 minRows={1}
                 maxRows={7}
-                className="w-full px-4 py-3 rounded-2xl bg-zinc-800/50 text-white border border-zinc-700 focus:outline-none focus:border-indigo-600 pr-12 no-scrollbar  overflow-y-auto"
-                
+                className="w-full px-4 py-3 rounded-2xl bg-zinc-800/50 text-white border 
+                  border-zinc-700 focus:outline-none focus:border-indigo-600 pr-12 
+                  no-scrollbar overflow-y-auto"
               />
               <button
                 type="submit"
