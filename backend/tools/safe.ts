@@ -94,8 +94,8 @@ export const getEthBalance = async ({
     }
 
     const balanceData = await response.json();
+    console.log("Raw balance data:", balanceData);
 
-    // Find native ETH balance entry
     const ethBalanceEntry = balanceData.find(
       (element: any) =>
         element?.tokenAddress === null && element?.token === null
@@ -105,14 +105,21 @@ export const getEthBalance = async ({
       throw new Error("ETH balance not found in response");
     }
 
-    const ethBalance = BigInt(ethBalanceEntry.balance) / BigInt(10 ** 18);
+    // Improved balance calculation with proper decimal handling
+    const balance = ethBalanceEntry.balance;
+    const balanceInWei = BigInt(balance);
+    const balanceInEth = Number(balanceInWei) / 1e18;
+
+    // console.log("Calculated ETH balance:", balanceInEth);
 
     return `The current balance of the Safe Multisig at address ${address} on ${
       networkConfig.name
-    } is ${ethBalance.toLocaleString("en-US")} ETH. View on explorer: ${
-      networkConfig.explorer
-    }/address/${address}`;
+    } is ${balanceInEth.toLocaleString("en-US", {
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 18,
+    })} ETH. View on explorer: ${networkConfig.explorer}/address/${address}`;
   } catch (error) {
+    console.error("Full error details:", error);
     throw new Error(
       `Failed to fetch ETH balance: ${
         error instanceof Error ? error.message : "Unknown error"
@@ -188,17 +195,53 @@ export const deployNewSafe = async ({
  */
 export const createSafeTransaction = async ({
   safeAddress,
-  transactions,
+  to,
+  value,
+  data = "0x",
 }: {
   safeAddress: string;
-  transactions: { to: string; data: string; value: string }[];
-}): Promise<SafeClientResult> => {
+  to: string;
+  value: string;
+  data?: string;
+}): Promise<string> => {
   try {
     const safeClient = await createBasicClient(
       process.env.AGENT_PRIVATE_KEY!,
       safeAddress
     );
-    return await safeClient.send({ transactions });
+
+    // Convert ETH amount to Wei
+    const valueInWei = BigInt(Math.floor(parseFloat(value) * 1e18)).toString();
+
+    const transaction = {
+      to,
+      data,
+      value: valueInWei,
+    };
+
+    const result = await safeClient.send({ transactions: [transaction] });
+    
+    const publicClient = createPublicClient({
+      chain: sepolia,
+      transport: http(),
+    });
+
+    // Check if we have a transaction hash
+    const safeTxHash = result.transactions?.ethereumTxHash;
+    if (!safeTxHash) {
+      console.error("No transaction hash found in the result");
+    }
+
+    // Wait for transaction confirmation
+    await publicClient.waitForTransactionReceipt({
+      hash: safeTxHash as `0x${string}`,
+    });
+
+    return `Transaction created and confirmed successfully for Safe ${safeAddress}. 
+    Sending ${value} ETH to ${to}
+    Transaction hash: ${safeTxHash}
+    View on explorer: https://sepolia.etherscan.io/tx/${safeTxHash}
+    Please check your Safe wallet to confirm the transaction.`;
   } catch (error) {
     throw new Error(
       `Failed to create Safe transaction: ${
@@ -259,16 +302,17 @@ export const safeToolsMetadata = {
   },
   createSafeTransactionMetadata: {
     name: "createSafeTransaction",
-    description: "Create a new transaction for an existing Safe",
+    description:
+      "Create a new ETH transfer transaction for an existing Safe wallet",
     schema: z.object({
-      safeAddress: addressSchema,
-      transactions: z.array(
-        z.object({
-          to: addressSchema,
-          data: z.string(),
-          value: z.string(),
-        })
-      ),
+      safeAddress: addressSchema.describe("The address of your Safe wallet"),
+      to: addressSchema.describe("Recipient address"),
+      value: z.string().describe("Amount of ETH to send"),
+      data: z
+        .string()
+        .optional()
+        .default("0x")
+        .describe("Transaction data (optional)"),
     }),
   },
   confirmSafeTransactionMetadata: {

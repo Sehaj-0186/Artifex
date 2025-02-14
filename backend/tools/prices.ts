@@ -20,8 +20,8 @@ export const getEthPriceUsd = async (): Promise<string> => {
   return `The current price of 1 ETH is $${Number(ethPriceUsd).toLocaleString(
     "en-US",
     {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 6,
     }
   )} USD`;
 };
