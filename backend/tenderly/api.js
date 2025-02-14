@@ -33,7 +33,7 @@ async function Token_data(){
     }
 }
 
-async function Trending_pool(){
+async function Trending_pool(Network){
     try{
         const response = await axios.get(`https://api.geckoterminal.com/api/v2/networks/${Network}/trending_pools`,{
             headers:{
@@ -94,20 +94,20 @@ async function ohlcvs(){
     }
 }
 async function main(){
-    await PoolData();
-    console.log("here is the Pool data");
+    // await PoolData();
+    // console.log("here is the Pool data");
 
-    await Token_data();
-    console.log("here is the tokken Data")
+    // await Token_data();
+    // console.log("here is the tokken Data")
     
-    console.log("here is the trending data")
-    await Trending_pool();
+    // console.log("here is the trending data")
+    await Trending_pool("eth");
     console.log("here is the trending pool address data")
-    await Trending_pool_address();
-    console.log("here arre the new Pools")
-    await New_pools();
-    console.log("here is the data of ohlcvs: =>")
-    await ohlcvs();
+    // await Trending_pool_address();
+    // console.log("here arre the new Pools")
+    // await New_pools();
+    // console.log("here is the data of ohlcvs: =>")
+    // await ohlcvs();
 }
 
 main();

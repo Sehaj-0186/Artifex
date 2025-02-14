@@ -8,6 +8,7 @@ import { tool } from "@langchain/core/tools";
 import { safeTools, safeToolsMetadata } from "./tools/safe";
 import { getEthPriceUsd, getEthPriceUsdMetadata } from "./tools/prices";
 import { multiply, multiplyMetadata } from "./tools/math";
+import { executeSwap, swapToolMetadata } from "./tools/swap";
 
 // Configuration
 const FALLBACK_MODELS = ["llama3.2:latest"];
@@ -36,6 +37,12 @@ You have access to these tools:
 - Create and confirm transactions for Safe wallets
 - Get current ETH price in USD
 - Perform basic multiplication
+- Swap tokens using Enso Finance aggregator
+
+For token swaps, use the executeSwap tool with these parameters:
+- tokenIn: address of input token (use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee for ETH)
+- tokenOut: address of output token
+- amountIn: amount to swap as a string
 
 When users greet you or ask general questions, respond naturally without using tools.
 For Safe-specific tasks, use the appropriate tools and format responses clearly.`;
@@ -167,6 +174,22 @@ const initializeAgent = async () => {
         schema: multiplyMetadata.schema,
       }
     ),
+    tool(
+      async (input) => {
+        try {
+          const result = await executeSwap(input);
+          return result;
+        } catch (error) {
+          console.error("Tool execution error (executeSwap):", error);
+          throw error;
+        }
+      },
+      {
+        name: swapToolMetadata.name,
+        description: swapToolMetadata.description,
+        schema: swapToolMetadata.schema,
+      }
+    ),
   ];
 
   try {
@@ -209,7 +232,7 @@ const initializeAgent = async () => {
 // Message processing with better error handling and logging
 const processMessage = async (message: string, threadId = "default") => {
   log.debug(`Processing message. ThreadId: ${threadId}`, { message });
-  
+
   if (!state.agent) {
     const initialized = await initializeAgent();
     if (!initialized) {
@@ -236,7 +259,6 @@ const processMessage = async (message: string, threadId = "default") => {
     // Extract the last message content from the response
     const lastMessage = response.messages[response.messages.length - 1];
     return lastMessage?.content || "No response generated";
-
   } catch (error) {
     if (state.retryCount < MAX_RETRIES) {
       state.retryCount++;
@@ -245,7 +267,7 @@ const processMessage = async (message: string, threadId = "default") => {
       await initializeAgent();
       return processMessage(message, threadId);
     }
-    
+
     throw new Error(`Failed to process message after ${MAX_RETRIES} attempts`);
   }
 };
@@ -285,13 +307,16 @@ wss.on("connection", (ws: WebSocket) => {
       const parsedData = JSON.parse(data.toString());
       log.debug("Received message:", parsedData);
 
-      if (parsedData.type === "message" && typeof parsedData.content === "string") {
+      if (
+        parsedData.type === "message" &&
+        typeof parsedData.content === "string"
+      ) {
         const { content, threadId = "default" } = parsedData;
         state.retryCount = 0;
 
         try {
           const response = await processMessage(content, threadId);
-              if (ws.readyState === WebSocket.OPEN) {
+          if (ws.readyState === WebSocket.OPEN) {
             // Stream response with progress tracking
             const chunks = response.split(" ");
             const totalChunks = chunks.length;
@@ -305,27 +330,34 @@ wss.on("connection", (ws: WebSocket) => {
                 })
               );
               await new Promise((resolve) => setTimeout(resolve, 50));
-          }
+            }
 
             ws.send(JSON.stringify({ type: "done" }));
           }
         } catch (error) {
           log.error("Processing error:", error);
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-              type: "error",
-              message: error instanceof Error ? error.message : "AI processing failed"
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "error",
+                message:
+                  error instanceof Error
+                    ? error.message
+                    : "AI processing failed",
+              })
+            );
           }
         }
       }
     } catch (error) {
       log.error("Message parsing error:", error);
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ 
-          type: "error", 
-          message: "Invalid message format" 
-        }));
+        ws.send(
+          JSON.stringify({
+            type: "error",
+            message: "Invalid message format",
+          })
+        );
       }
     }
   });

@@ -220,7 +220,7 @@ export const createSafeTransaction = async ({
     };
 
     const result = await safeClient.send({ transactions: [transaction] });
-    
+
     const publicClient = createPublicClient({
       chain: sepolia,
       transport: http(),
