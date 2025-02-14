@@ -209,8 +209,12 @@ const initializeAgent = async () => {
 // Message processing with better error handling and logging
 const processMessage = async (message: string, threadId = "default") => {
   log.debug(`Processing message. ThreadId: ${threadId}`, { message });
+  
   if (!state.agent) {
-    await initializeAgent();
+    const initialized = await initializeAgent();
+    if (!initialized) {
+      throw new Error("Failed to initialize agent");
+    }
   }
 
   if (!message.trim()) {
@@ -229,7 +233,10 @@ const processMessage = async (message: string, threadId = "default") => {
       }
     );
 
-    return response.messages[response.messages.length - 1].content;
+    // Extract the last message content from the response
+    const lastMessage = response.messages[response.messages.length - 1];
+    return lastMessage?.content || "No response generated";
+
   } catch (error) {
     if (state.retryCount < MAX_RETRIES) {
       state.retryCount++;
@@ -238,7 +245,8 @@ const processMessage = async (message: string, threadId = "default") => {
       await initializeAgent();
       return processMessage(message, threadId);
     }
-    throw new Error(`Processing failed after ${MAX_RETRIES} attempts`);
+    
+    throw new Error(`Failed to process message after ${MAX_RETRIES} attempts`);
   }
 };
 
@@ -277,17 +285,13 @@ wss.on("connection", (ws: WebSocket) => {
       const parsedData = JSON.parse(data.toString());
       log.debug("Received message:", parsedData);
 
-      // Handle chat messages
-      if (
-        parsedData.type === "message" &&
-        typeof parsedData.content === "string"
-      ) {
+      if (parsedData.type === "message" && typeof parsedData.content === "string") {
         const { content, threadId = "default" } = parsedData;
         state.retryCount = 0;
 
         try {
           const response = await processMessage(content, threadId);
-          if (ws.readyState === WebSocket.OPEN) {
+              if (ws.readyState === WebSocket.OPEN) {
             // Stream response with progress tracking
             const chunks = response.split(" ");
             const totalChunks = chunks.length;
@@ -301,33 +305,27 @@ wss.on("connection", (ws: WebSocket) => {
                 })
               );
               await new Promise((resolve) => setTimeout(resolve, 50));
-            }
+          }
 
             ws.send(JSON.stringify({ type: "done" }));
           }
         } catch (error) {
           log.error("Processing error:", error);
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(
-              JSON.stringify({
-                type: "error",
-                message:
-                  error instanceof Error
-                    ? error.message
-                    : "AI processing failed",
-              })
-            );
+            ws.send(JSON.stringify({
+              type: "error",
+              message: error instanceof Error ? error.message : "AI processing failed"
+            }));
           }
         }
-      } else {
-        throw new Error("Invalid message format");
       }
     } catch (error) {
       log.error("Message parsing error:", error);
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({ type: "error", message: "Invalid message format" })
-        );
+        ws.send(JSON.stringify({ 
+          type: "error", 
+          message: "Invalid message format" 
+        }));
       }
     }
   });
