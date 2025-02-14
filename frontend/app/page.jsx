@@ -1,14 +1,11 @@
-import ChatInterface from "./components/ChatInterface";
-import ConnectWalletButton from "../components/ConnectWalletButton";
+import ConnectWalletButton from "./components/ConnectWalletButton";
+import LandingPage from "./components/LandingPage";
 
 export default function Home() {
     return (
         <>
-          <div>
-    <ConnectWalletButton />
-  </div>
     <main>
-      <ChatInterface />
+      <LandingPage />
     </main>
         </>
      
